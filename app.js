@@ -224,10 +224,18 @@ function cancelEdit(){ renderDetailsView(); document.getElementById("editButtons
 // Hazırla
 // ==============================
 async function markPrepared(){
-  await db.from(TABLE).update({kargo_durumu:"Hazırlandı"}).eq("siparis_no", selectedOrder.siparis_no);
-  toast("Sipariş Hazırlandı olarak işaretlendi");
-  closeModal(); loadOrders(true);
+  await db.from(TABLE)
+    .update({kargo_durumu:"Hazırlandı"})
+    .eq("siparis_no", selectedOrder.siparis_no);
+
+  // 👇 ADİSYON FİŞİ YAZDIR (YAZICI A)
+  printSiparis(selectedOrder);
+
+  toast("Sipariş Hazırlandı ve adisyon yazdırılıyor...");
+  closeModal(); 
+  loadOrders(true);
 }
+
 
 // ==============================
 // Kargola (B stili uyarı + 1 dk sadece bu sipariş kilidi)
@@ -304,12 +312,13 @@ function printBarcode(){
   w.onload = () => {
     w.document.getElementById("zpl").innerText = zpl;
 
-    // barkod_print.html içindeki window.doPrint'i tetikle
+    // barkod_print.html içindeki window.doPrint fonksiyonunu tetikle
     if (typeof w.doPrint === "function") {
       w.doPrint();
     }
   };
 }
+
 
 // ==============================
 // İptal
