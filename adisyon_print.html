@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Adisyon Yazdır</title>
+
+<style>
+  body { 
+    font-family: Arial, sans-serif; 
+    padding: 20px;
+    font-size: 16px;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .line {
+    border-bottom: 1px dashed #000;
+    margin: 10px 0;
+  }
+</style>
+
+</head>
+<body>
+
+<h2>TAŞDİPLİ ADİSYON</h2>
+<div class="line"></div>
+
+<!-- JS buraya sipariş içeriğini yazacak -->
+<div id="content"></div>
+
+<script>
+  // app.js DOM içeriği yazdıktan sonra bu fonksiyonu çağıracak
+  window.doPrint = function () {
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => window.close(), 300);
+    }, 150);
+  };
+</script>
+
+</body>
+</html>
