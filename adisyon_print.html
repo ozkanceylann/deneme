@@ -2,43 +2,74 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Adisyon</title>
+<title>TAŞDİPLİ ADİSYON</title>
 
 <style>
   body {
     width: 80mm;
     margin: 0;
-    padding: 0 6px;
+    padding: 4px 6px;
     font-family: Arial, sans-serif;
     font-size: 12px;
     line-height: 1.2;
   }
 
+  .logo {
+    text-align: center;
+    margin: 4px 0 6px 0;
+  }
+
+  .logo img {
+    width: 120px;
+    height: auto;
+  }
+
   h2 {
     text-align: center;
     font-size: 13px;
-    margin: 6px 0;
+    margin: 2px 0 4px 0;
   }
 
-  .line {
-    border-bottom: 1px dashed #000;
+  .box {
+    border: 1px solid #000;
+    padding: 6px;
     margin: 4px 0;
   }
 
-  .row {
-    margin: 2px 0;
+  .row { margin: 2px 0; }
+  .line { border-bottom: 1px dashed #000; margin: 4px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
   }
 
-  b {
+  table th, table td {
+    padding: 4px 0;
+    border-bottom: 1px dashed #000;
     font-size: 12px;
+  }
+
+  table th {
+    text-align: left;
+    font-weight: bold;
+  }
+
+  .total-row td {
+    font-weight: bold;
+    border-top: 1px dashed #000;
   }
 </style>
 
 </head>
 <body>
 
-<h2>TAŞDİPLİ ADİSYON</h2>
-<div class="line"></div>
+<div class="logo">
+  <img src="tasdipli_logo.png">
+</div>
+
+<h2>TAŞDİPLİ SİPARİŞ ADİSYONU</h2>
 
 <div id="content"></div>
 
@@ -47,7 +78,7 @@
     setTimeout(() => {
       window.print();
       setTimeout(() => window.close(), 300);
-    }, 120);
+    }, 200);
   };
 </script>
 
