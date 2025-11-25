@@ -330,27 +330,42 @@ function printSiparis(order) {
 // ==============================
 // Barkod
 // ==============================
-function printBarcode(){
-  const base64 = selectedOrder.zpl_base64;
+let selectedPrinter = null;
 
+// Yazıcıları listele
+function loadPrinters() {
+  BrowserPrint.getLocalDevices(function(printers) {
+      selectedPrinter = printers[0]; // Varsayılan ilk yazıcı
+
+      const list = printers.map(p => `<option value="${p.name}">${p.name}</option>`).join("");
+
+      document.getElementById("printerList").innerHTML = list;
+
+  }, console.error, "printer");
+}
+
+
+// Barkod yazdır
+function printBarcode() {
+  const base64 = selectedOrder.zpl_base64;
   if (!base64) {
-    toast("ZPL barkodu bulunamadı!");
+    alert("ZPL barkodu bulunamadı!");
     return;
   }
 
-  const zpl = atob(base64); // Base64 → ZPL decode
+  const zpl = atob(base64);
 
-  const w = window.open("barkod_print.html", "_blank", "width=320,height=600");
+  if (!selectedPrinter) {
+    alert("Yazıcı seçilmedi!");
+    return;
+  }
 
-  w.onload = () => {
-    w.document.getElementById("zpl").innerText = zpl;
-
-    // barkod_print.html içindeki window.doPrint fonksiyonunu tetikle
-    if (typeof w.doPrint === "function") {
-      w.doPrint();
-    }
-  };
+  selectedPrinter.send(zpl, 
+    () => console.log("Baskı gönderildi"), 
+    (err) => console.error("Baskı hatası:", err)
+  );
 }
+
 
 
 // ==============================
