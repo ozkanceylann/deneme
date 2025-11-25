@@ -269,25 +269,58 @@ async function sendToCargo(){
 function printSiparis(order) {
   const w = window.open("adisyon_print.html", "_blank", "width=320,height=600");
 
+  // Ürünleri diziye çevir
+  let products = [];
+  try {
+    products = JSON.parse(order.urun_bilgisi);
+  } catch {
+    products = [order.urun_bilgisi];
+  }
+
+  let productRows = "";
+  products.forEach((p, i) => {
+    productRows += `
+      <tr>
+        <td>${i+1}. ${p}</td>
+        <td style="text-align:right;">1</td>
+      </tr>
+    `;
+  });
+
   const html = `
-  <b>No:</b> ${order.siparis_no}<br>
-  <b>İsim:</b> ${order.ad_soyad}<br>
-  <b>Sipariş Tel:</b> ${order.siparis_tel}<br>
-  <b>Müşteri Tel:</b> ${order.musteri_tel}<br>
-  <b>Şehir/İlçe:</b> ${order.sehir} / ${order.ilce}<br>
-  <b>Adres:</b> ${order.adres}<br>
-  <b>Ürün:</b> ${parseProduct(order.urun_bilgisi)}<br>
-  <b>Adet:</b> ${order.kargo_adet ?? "-"}<br>
-  <b>KG:</b> ${order.kargo_kg ?? "-"}<br>
-  <b>Tutar:</b> ${order.toplam_tutar} TL<br>
-  <b>Ödeme:</b> ${order.odeme_sekli}<br><br>
-  <b>Tarih:</b> ${new Date().toLocaleString("tr-TR")}<br>
+    <div class="box">
+      <div class="row"><b>Sipariş No:</b> ${order.siparis_no}</div>
+      <div class="row"><b>İsim:</b> ${order.ad_soyad}</div>
+      <div class="row"><b>Tel:</b> ${order.musteri_tel}</div>
+      <div class="row"><b>Adres:</b> ${order.adres}</div>
+      <div class="row"><b>Şehir/İlçe:</b> ${order.sehir} / ${order.ilce}</div>
+    </div>
+
+    <div class="box">
+      <b>ÜRÜNLER</b>
+      <table>
+        <tr>
+          <th>Ürün</th>
+          <th style="text-align:right;">Adet</th>
+        </tr>
+        ${productRows}
+        <tr class="total-row">
+          <td>Toplam:</td>
+          <td style="text-align:right;">${order.kargo_adet ?? 1}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <div class="row"><b>Ödeme:</b> ${order.odeme_sekli}</div>
+      <div class="row"><b>Tutar:</b> ${order.toplam_tutar} TL</div>
+      <div class="row"><b>Tarih:</b> ${new Date().toLocaleString("tr-TR")}</div>
+    </div>
   `;
 
   w.onload = () => {
     w.document.getElementById("content").innerHTML = html;
 
-    // adisyon_print.html içindeki window.doPrint'i tetikle
     if (typeof w.doPrint === "function") {
       w.doPrint();
     }
