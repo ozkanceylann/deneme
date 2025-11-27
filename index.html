@@ -1,144 +1,170 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <link rel="icon" type="image/png" href="favicon.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tasdipli Sipariş Takip Sistemi</title>
 
+  <title>Sipariş Sistemi</title>
+
+  <!-- ✔ FAVICON DÜZELTİLDİ -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <!-- ✔ CONFIG ÖNCE GELMEK ZORUNDA -->
+  <script src="config.js"></script>
+
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .btn-mini{
+      display:inline-block;
+      padding:4px 8px;
+      font-size:12px;
+      border:none;
+      background:#0d6efd;
+      color:#fff;
+      border-radius:6px;
+      margin-left:6px;
+    }
+  </style>
+
 </head>
 
 <body>
 
-  <!-- 🛡 GÜVENLİK -->
-  <script>
-    const firma = localStorage.getItem("firma");
-    const rol = localStorage.getItem("rol");
-    const session = localStorage.getItem("session");
-
-    if (!session || !firma || firma.toLowerCase() !== "tasdipli") {
-      window.location.href = "login.html";
-    }
-
-    window.userFirma = firma;
-    window.userRole = rol;
-  </script>
-
-  <!-- MOBILE MENU -->
+  <!-- MOBİL MENÜ -->
   <div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-
     <div class="sidebar-header">
-      <img src="tasdipli_logo.png" class="sidebar-logo" alt="Tasdipli Logo" />
-      <div class="sidebar-title">Tasdipli<br/>Sipariş Takip Sistemi</div>
+      <img id="brandLogo" class="sidebar-logo" alt="Logo">
+      <div id="brandTitle" class="sidebar-title"></div>
     </div>
 
     <ul class="menu">
-      <li id="tab_bekleyen" class="active" onclick="setTab('bekleyen')">Bekleyen</li>
+      <li id="tab_bekleyen"   class="active" onclick="setTab('bekleyen')">Bekleyen</li>
       <li id="tab_hazirlandi" onclick="setTab('hazirlandi')">Hazırlandı</li>
       <li id="tab_kargolandi" onclick="setTab('kargolandi')">Kargolandı</li>
-      <li id="tab_iptal" onclick="setTab('iptal')">İptal</li>
+      <li id="tab_tamamlandi" onclick="setTab('tamamlandi')">Tamamlananlar</li>
+      <li id="tab_sorunlu"    onclick="setTab('sorunlu')">Sorunlu</li>
+      <li id="tab_iptal"      onclick="setTab('iptal')">İptal</li>
+
+      <!-- ✔ RAPORLAR BURADAN AÇILIYOR -->
       <li onclick="window.location='rapor.html'">Raporlar</li>
     </ul>
 
-    <button class="btn-danger" style="margin-top:20px" onclick="logout()">Çıkış Yap</button>
-
+    <button class="btn-danger" onclick="logout()">Çıkış Yap</button>
   </aside>
 
-  <!-- MAIN CONTENT -->
+
+
+  <!-- ANA İÇERİK -->
   <main class="content-area">
 
-    <!-- SEARCH BAR -->
     <div class="top-bar">
-      <input id="searchInput" type="text" placeholder="Sipariş No / İsim / Telefon..." />
+      <input id="searchInput" type="text" placeholder="Sipariş No / İsim / Tel / Adres" />
       <button class="btn-search" onclick="searchOrders()">Ara</button>
       <button class="btn-clear" onclick="clearSearch()">Temizle</button>
     </div>
 
-    <!-- ORDERS TABLE -->
-   <div class="table-wrapper">
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>İsim</th>
-          <th>Ürün</th>
-          <th>Tutar</th>
-          <th>Durum</th>
-          <th>Kargo Kod</th>
-          <th>Aç</th>
-        </tr>
-      </thead>
-      <tbody id="ordersBody"></tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>İsim</th>
+            <th>Ürün</th>
+            <th>Tutar</th>
+            <th>Durum</th>
+            <th>Kargo Kod</th>
+            <th>Aç / Sorgula</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
     </div>
-    <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Daha Fazla Yükle</button>
+
+    <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Daha Fazla</button>
+
   </main>
 
-  <!-- ORDER MODAL -->
+
+
+  <!-- MODAL -->
   <div id="orderModal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
 
+      <span class="close" onclick="closeModal()">&times;</span>
       <h2>Sipariş Detayı</h2>
+
       <div id="orderDetails"></div>
- 
-      <!-- YAZICI SEÇME BUTTONS -->
-      <div style="margin:10px 0;">
-  <label><b>Yazıcı Seç:</b></label>
-  <select id="printerList" style="padding:8px;width:100%;border-radius:8px;"></select>
+
+<div id="actionButtons" class="modal-btns">
+
+    <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
+    <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
+    <button id="btnWaiting" class="btn-waiting" onclick="setWaiting()">Bekliyor</button>
+    <button id="btnBarcode" class="btn-primary" style="display:none;" onclick="printBarcode()">Barkod Kes</button>
+
+    <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
+
+    <!-- İPTAL ET (ÜST SATIR) -->
+    <button class="btn-danger" onclick="openCancelForm()">İptal Et</button>
+
+    <!-- KAPAT (ALT SATIR) -->
+    <button class="btn-close" onclick="closeModal()">Kapat</button>
+
 </div>
 
-
-      <!-- ACTION BUTTONS -->
-      <div id="actionButtons" class="modal-btns">
-        <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
-        <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
-        <button id="btnBarcode" class="btn-primary" onclick="printBarcode()" style="display:none;">Barkod Kes</button>
-        <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
-        <button class="btn-danger" onclick="openCancelForm()">İptal Et</button>
-        <button class="btn-close" onclick="closeModal()">Kapat</button>
-      </div>
-
-      <!-- EDIT BUTTONS -->
+      <!-- Edit Butonları -->
       <div id="editButtons" class="modal-btns" style="display:none;">
         <button class="btn-secondary" onclick="saveEdit()">Kaydet</button>
         <button class="btn-danger" onclick="cancelEdit()">Vazgeç</button>
         <button class="btn-close" onclick="closeModal()">Kapat</button>
       </div>
 
-      <!-- RESTORE BUTTONS -->
+      <!-- Geri Al -->
       <div id="restoreButtons" class="modal-btns" style="display:none;">
         <button class="btn-secondary" onclick="restoreOrder()">Geri Al</button>
         <button class="btn-close" onclick="closeModal()">Kapat</button>
       </div>
 
-      <!-- CANCEL FORM -->
+      <!-- İptal formu -->
       <div id="cancelForm" style="display:none;margin-top:20px;">
         <h3>İptal Nedeni</h3>
-        <textarea id="iptalInput" placeholder="Neden iptal edildi?"></textarea>
+        <textarea id="iptalInput" placeholder="Neden iptal ediliyor?"></textarea>
         <div class="modal-btns">
           <button class="btn-danger" onclick="confirmCancel()">İptal Et</button>
           <button class="btn-close" onclick="cancelCancelForm()">Vazgeç</button>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- ALERT ROOT (B-stili modal için) -->
   <div id="alertRoot"></div>
 
+
+  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-  setTimeout(() => {
-    try { loadPrinters(); } catch(e) {}
-  }, 800);
+
+  <!-- APP -->
+  <script src="app.js" type="module"></script>
+
+  <!-- LOGO & BAŞLIK & İLK YÜKLEME -->
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+
+      await window.waitConfig();
+
+      document.getElementById("brandLogo").src = CONFIG.logo;
+      document.getElementById("brandTitle").innerHTML =
+        CONFIG.brandName + "<br/>Sipariş Sistemi";
+
+      loadOrders(true);
+    });
   </script>
-  <script src="app.js"></script>
-  <script src="BrowserPrint-3.0.216.min.js"></script>
 
 </body>
 </html>
