@@ -157,6 +157,40 @@ function openTrackingUrl(url){
   window.open(url, "_blank");
 }
 
+
+async function updateCargoStatuses() {
+  toast("Kargolandı durumundaki siparişler sorgulanıyor...");
+
+  // Tüm Kargolandı siparişleri çek
+  const { data, error } = await db
+    .from(TABLE)
+    .select("*")
+    .eq("kargo_durumu", "Kargolandı");
+
+  if (error) {
+    toast("Veri alınamadı!");
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    toast("Kargolandı sipariş yok!");
+    return;
+  }
+
+  // Webhook’a POST et
+  try {
+    await fetch("https://n8n.ozkanceylan.uk/webhook/kargo_durum_guncelle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ siparisler: data })
+    });
+
+    toast("Durumlar kontrol için gönderildi ✔");
+  } catch (e) {
+    toast("Gönderim hatası!");
+  }
+}
+
 /* ============================================================
    DETAY
 ============================================================ */
@@ -526,13 +560,22 @@ function setTab(tab){
   document.querySelectorAll(".menu li").forEach(li=>li.classList.remove("active"));
   const el = document.getElementById(`tab_${tab}`);
   if(el) el.classList.add("active");
+
+  /* =====================================================
+      KARGOLANDI TABINDA DURUM GÜNCELLE BUTONUNU GÖSTER
+  ===================================================== */
+  const durumBtn = document.getElementById("btnDurumGuncelle");
+  if (durumBtn) {
+    if (tab === "kargolandi") {
+      durumBtn.style.display = "inline-block";
+    } else {
+      durumBtn.style.display = "none";
+    }
+  }
+
   loadOrders(true);
 }
 
-function loadMore(){
-  currentPage++;
-  loadOrders(false);
-}
 
 function toggleMenu(){
   document.querySelector(".sidebar").classList.toggle("open");
