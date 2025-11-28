@@ -26,7 +26,6 @@ const WH_SEHIR_ILCE = CONFIG.webhooks.sehir_ilce;
 ============================================================ */
 let currentTab = "bekleyen";
 let currentPage = 1;
-const PAGE_SIZE = 10;
 let selectedOrder = null;
 
 const busy = { kargola: new Set(), barkod: new Set() };
@@ -36,46 +35,12 @@ const busy = { kargola: new Set(), barkod: new Set() };
 /* ============================================================
    UI HELPERS
 ============================================================ */
-function getColumnCount(){
-  return currentTab === "bekleyen" ? 6 : 7;
-}
-
-function renderTableHeader(){
-  const head = document.getElementById("ordersHeadRow");
-  if(!head) return;
-
-  head.innerHTML = currentTab === "bekleyen"
-    ? `
-      <th>No</th>
-      <th>İsim</th>
-      <th>Ürün</th>
-      <th>Tutar</th>
-      <th>Durum</th>
-      <th>Sipariş Alan</th>
-    `
-    : `
-      <th>No</th>
-      <th>İsim</th>
-      <th>Ürün</th>
-      <th>Tutar</th>
-      <th>Durum</th>
-      <th>Kargo Kod</th>
-      <th>Aç / Sorgula</th>
-    `;
-}
-
 function toast(msg, ms=2500){
   const t = document.createElement("div");
   t.className = "toast";
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), ms);
-}
-
-function toggleLoadMore(visible){
-  const btn = document.getElementById("loadMoreBtn");
-  if(!btn) return;
-  btn.style.display = visible ? "block" : "none";
 }
 
 function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"}){
@@ -113,9 +78,7 @@ async function loadOrders(reset=false){
     tbody.innerHTML = "";
   }
 
-  renderTableHeader();
-
-  let q = db.from(TABLE).select("*", { count: "exact" });
+  let q = db.from(TABLE).select("*");
 
   if(currentTab==="bekleyen")   q = q.eq("kargo_durumu","Bekliyor");
   if(currentTab==="hazirlandi") q = q.eq("kargo_durumu","Hazırlandı");
@@ -124,40 +87,24 @@ async function loadOrders(reset=false){
   if(currentTab==="sorunlu")    q = q.eq("kargo_durumu","Sorunlu");
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
 
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const end   = currentPage * PAGE_SIZE - 1;
-
   q = q.order("siparis_no", { ascending:false })
-       .range(start, end);
+       .range(0, currentPage*20 - 1);
 
-  const { data, error, count } = await q;
+  const { data, error } = await q;
   if(error){
-    tbody.innerHTML = `<tr><td colspan="${getColumnCount()}">HATA: ${error.message}</td></tr>`;
-    toggleLoadMore(false);
+    tbody.innerHTML = `<tr><td colspan="7">HATA: ${error.message}</td></tr>`;
     return;
   }
 
-  const hasMore = typeof count === "number"
-    ? count > currentPage * PAGE_SIZE
-    : (data?.length === PAGE_SIZE);
-
-  if(!reset && (!data || data.length === 0)){
-    toggleLoadMore(false);
-    return toast("Gösterilecek başka kayıt yok.");
-  }
-
-  renderTable(data, { append: !reset, hasMore });
+  renderTable(data);
 }
 
-function renderTable(rows, { append=false, hasMore } = {}){
+function renderTable(rows){
   const tbody = document.getElementById("ordersBody");
-  if(!tbody) return;
-
-  if(!append) tbody.innerHTML = "";
+  tbody.innerHTML = "";
 
   if(!rows || rows.length===0){
-    if(!append) tbody.innerHTML = `<tr><td colspan="${getColumnCount()}">Kayıt bulunamadı</td></tr>`;
-    toggleLoadMore(false);
+    tbody.innerHTML = `<tr><td colspan="7">Kayıt bulunamadı</td></tr>`;
     return;
   }
 
@@ -170,50 +117,28 @@ function renderTable(rows, { append=false, hasMore } = {}){
 
     const isTrackingTab = ["kargolandi", "tamamlandi", "sorunlu"].includes(currentTab);
 
-    const isPendingTab = currentTab === "bekleyen";
-
-  const isPreparedTab = currentTab === "hazirlandi";
-
-  const actionBtn = isTrackingTab
-    ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
-    : `<button class="btn-open">Aç</button>`;
-
-  const errorPreview = isPreparedTab
-    ? `<button class="error-chip" onclick="event.stopPropagation(); showErrorDetail(${JSON.stringify(o.gonder_hata_bilgisi ?? "")})" title="Detayı görmek için tıkla">
-         <span class="error-chip__label">Hata</span>
-         <span class="error-chip__text">${escapeHtml(shortenError(o.gonder_hata_bilgisi))}</span>
-       </button>`
-    : actionBtn;
+const actionBtn = isTrackingTab
+  ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
+  : `<button class="btn-open">Aç</button>`;
 
 
-    tr.innerHTML = isPendingTab
-      ? `
-        <td>${o.siparis_no}</td>
-        <td>${o.ad_soyad}</td>
-        <td>${parseProduct(o.urun_bilgisi)}</td>
-        <td>${o.toplam_tutar} TL</td>
-        <td>${durumText}</td>
-        <td>${o.siparis_alan ?? "-"}</td>
-      `
-      : `
-        <td>${o.siparis_no}</td>
-        <td>${o.ad_soyad}</td>
-        <td>${parseProduct(o.urun_bilgisi)}</td>
-        <td>${o.toplam_tutar} TL</td>
-        <td>${durumText}</td>
-        <td>${o.kargo_takip_kodu ?? "-"}</td>
-        <td>${errorPreview}</td>
-      `;
+    tr.innerHTML = `
+      <td>${o.siparis_no}</td>
+      <td>${o.ad_soyad}</td>
+      <td>${parseProduct(o.urun_bilgisi)}</td>
+      <td>${o.toplam_tutar} TL</td>
+      <td>${durumText}</td>
+      <td>${o.kargo_takip_kodu ?? "-"}</td>
+      <td>${actionBtn}</td>
+    `;
 
     tr.addEventListener("click", (e)=>{
-      if(e.target.classList.contains("btn-open") || e.target.closest(".error-chip")) return;
+      if(e.target.classList.contains("btn-open")) return;
       openOrder(o.siparis_no);
     });
 
     tbody.appendChild(tr);
   });
-
-  if(typeof hasMore === "boolean") toggleLoadMore(hasMore);
 }
 
 function parseProduct(v){
@@ -224,53 +149,12 @@ function parseProduct(v){
   return v;
 }
 
-function shortenError(text, max=55){
-  if(!text) return "Hata bilgisi yok";
-  if(text.length <= max) return text;
-  return text.slice(0, max) + "...";
-}
-
-function escapeHtml(str=""){
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 /* ============================================================
    KARGO SORGULAMA
 ============================================================ */
 function openTrackingUrl(url){
   if(!url) return toast("Kargo sorgulama linki yok.");
   window.open(url, "_blank");
-}
-
-/* ============================================================
-   GÖNDERİM HATA DETAYI
-============================================================ */
-function showErrorDetail(message=""){
-  const root = document.getElementById("alertRoot");
-  const wrap = document.createElement("div");
-  wrap.className = "alert-backdrop";
-
-  const safeMessage = message || "Gönderim hatası kaydı bulunamadı.";
-
-  wrap.innerHTML = `
-    <div class="alert-card error-detail-card">
-      <div class="alert-title">Gönderim Hata Bilgisi</div>
-      <div class="alert-text">
-        <textarea class="error-detail-text" readonly>${escapeHtml(safeMessage)}</textarea>
-      </div>
-      <div class="alert-actions">
-        <button class="btn-brand" id="errorClose">Kapat</button>
-      </div>
-    </div>`;
-
-  root.appendChild(wrap);
-
-  wrap.querySelector("#errorClose").onclick = () => wrap.remove();
 }
 
 /* ============================================================
@@ -300,7 +184,6 @@ function renderDetails() {
   document.getElementById("orderDetails").innerHTML = `
     <p><b>No:</b> ${d.siparis_no}</p>
     <p><b>İsim:</b> ${d.ad_soyad}</p>
-    <p><b>Sipariş Alan:</b> ${d.siparis_alan ?? "-"}</p>
     <p><b>Sipariş Alan Tel:</b> ${d.siparis_tel}</p>
     <p><b>Müşteri Tel:</b> ${d.musteri_tel}</p>
     <p><b>Adres:</b> ${d.adres}</p>
@@ -603,15 +486,6 @@ async function confirmCancel(){
 }
 
 async function restoreOrder(){
-  const ok = await confirmModal({
-    title: "Bekleyenlere Geri Al",
-    text: "Bu sipariş bekleyen siparişlere geri alınacaktır. Onaylıyor musunuz?",
-    confirmText: "Evet",
-    cancelText: "Hayır"
-  });
-
-  if(!ok) return;
-
   await db.from(TABLE).update({
     kargo_durumu:"Bekliyor",
     iptal_nedeni:null,
@@ -638,7 +512,7 @@ async function searchOrders(){
     adres.ilike.%${q}%,
     kargo_takip_kodu.ilike.%${q}%
   `);
-  renderTable(data, { append:false, hasMore:false });
+  renderTable(data);
 }
 
 function clearSearch(){
@@ -732,7 +606,6 @@ Object.assign(window, {
   closeModal,
 
   openTrackingUrl,
-  showErrorDetail,
 
   setWaiting,
   markPrepared,
@@ -756,3 +629,5 @@ Object.assign(window, {
 /* ============================================================
    BAŞLAT
 ============================================================ */
+loadOrders(true);
+
