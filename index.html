@@ -71,7 +71,7 @@
     <div class="table-wrapper">
       <table class="orders-table">
         <thead>
-          <tr>
+          <tr id="ordersHeadRow">
             <th>No</th>
             <th>İsim</th>
             <th>Ürün</th>
@@ -119,8 +119,10 @@
 
       <!-- Edit Butonları -->
       <div id="editButtons" class="modal-btns" style="display:none;">
-        <button class="btn-secondary" onclick="saveEdit()">Kaydet</button>
-        <button class="btn-danger" onclick="cancelEdit()">Vazgeç</button>
+        <div class="edit-primary-actions">
+          <button class="btn-secondary" onclick="saveEdit()">Kaydet</button>
+          <button class="btn-danger" onclick="cancelEdit()">Vazgeç</button>
+        </div>
         <button class="btn-close" onclick="closeModal()">Kapat</button>
       </div>
 
