@@ -87,7 +87,8 @@ body{
 .orders-table td{
   padding:13px; border-bottom:1px solid #f0f0f0; font-size:14px; white-space:nowrap
 }
-.orders-table tr:hover{ background:#f4f9f4 }
+.orders-table tbody tr{ cursor:pointer; user-select:none; }
+.orders-table tr:hover{ background:#e7f3e7 }
 
 .btn-open{
   padding:8px 12px; background:var(--brand-2);
@@ -314,10 +315,11 @@ canvas{ max-width:100% }
   display: flex;
   flex-wrap: wrap;        /* Alt satır oluşturmaya izin ver */
   gap: 10px;
+  align-items: stretch;
 }
 
 #actionButtons button {
-  flex: 0 0 auto;         /* Üst satırdaki butonlar sabit genişlik */
+  flex: 1 1 160px;        /* Üst satırdaki butonlar sabit genişlik */
 }
 
 /* Kapat butonu altta tek satır */

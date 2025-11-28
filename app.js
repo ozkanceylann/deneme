@@ -26,6 +26,7 @@ const WH_SEHIR_ILCE = CONFIG.webhooks.sehir_ilce;
 ============================================================ */
 let currentTab = "bekleyen";
 let currentPage = 1;
+const PAGE_SIZE = 10;
 let selectedOrder = null;
 
 const busy = { kargola: new Set(), barkod: new Set() };
@@ -118,7 +119,7 @@ async function loadOrders(reset=false){
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
 
   q = q.order("siparis_no", { ascending:false })
-       .range(0, currentPage*20 - 1);
+       .range(0, currentPage*PAGE_SIZE - 1);
 
   const { data, error } = await q;
   if(error){
@@ -275,6 +276,7 @@ function renderDetails() {
   document.getElementById("orderDetails").innerHTML = `
     <p><b>No:</b> ${d.siparis_no}</p>
     <p><b>İsim:</b> ${d.ad_soyad}</p>
+    <p><b>Sipariş Alan:</b> ${d.siparis_alan ?? "-"}</p>
     <p><b>Sipariş Alan Tel:</b> ${d.siparis_tel}</p>
     <p><b>Müşteri Tel:</b> ${d.musteri_tel}</p>
     <p><b>Adres:</b> ${d.adres}</p>
@@ -577,6 +579,15 @@ async function confirmCancel(){
 }
 
 async function restoreOrder(){
+  const ok = await confirmModal({
+    title: "Bekleyenlere Geri Al",
+    text: "Bu sipariş bekleyen siparişlere geri alınacaktır. Onaylıyor musunuz?",
+    confirmText: "Evet",
+    cancelText: "Hayır"
+  });
+
+  if(!ok) return;
+
   await db.from(TABLE).update({
     kargo_durumu:"Bekliyor",
     iptal_nedeni:null,
