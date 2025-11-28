@@ -371,22 +371,6 @@ canvas{ max-width:100% }
   .content-area{ margin-left:260px!important }
 }
 
-@media (min-width: 1200px) {
-  html {
-    zoom: 0.8;
-  }
-
-  /* Sidebar zoom’a göre küçültüldü */
-  .sidebar {
-    width: 240px !important;
-  }
-
-  /* İç boşluklar da küçültüldü */
-  .sidebar .menu li {
-    padding: 10px 14px !important;
-  }
-}
-
 /* ==============================
    MOBİL
 ============================== */
