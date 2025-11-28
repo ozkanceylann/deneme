@@ -977,8 +977,6 @@ Object.assign(window, {
   cancelEdit,
 
   openCancelForm,
-  cancelCancelForm,
-  confirmCancel,
   restoreOrder,
 
   queryCityDistrictCodes,
