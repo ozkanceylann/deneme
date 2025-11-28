@@ -388,24 +388,25 @@ canvas{ max-width:100% }
   .content-area{ margin-left:0!important; padding-top:70px }
   .edit-grid{ grid-template-columns:1fr } /* form tek kolon */
 }
+
+
 #actionButtons {
   display: flex;
-  flex-wrap: nowrap;      /* ALT SATIR YOK */
+  flex-wrap: nowrap;
   gap: 10px;
-  justify-content: space-between;
 }
 
 #actionButtons button {
-  flex: 1;
-  min-width: 0;
+  flex: 1;        /* Hepsi eşit genişlik */
+  min-width: 0;   /* Taşmayı önler */
 }
 
-/* Kapat butonu altta tek satır */
+/* Kapat butonu özel davranmasın → ESKİ KURAL SİLİNECEK */
 #actionButtons .btn-close {
-  flex-basis: 100%;
-  order: 99;
-  justify-content: center;
+  flex-basis: auto !important;
+  order: unset !important;
 }
+
 
 /* İptal Et butonu mutlaka üst satırda */
 #actionButtons .btn-danger {
