@@ -615,13 +615,22 @@ async function enterEditMode(){
   const ilceKoduInput = document.getElementById("ilce_kodu");
 
   // ilk açılış değerleri
-  sehirInput.value = citySelect?.selectedOptions?.[0]?.textContent || (d.sehir ?? "");
-  sehirKoduInput.value = citySelect?.value || (d.sehir_kodu ?? "");
+  const activeCity = citySelect?.selectedOptions?.[0];
+  if(activeCity?.value){
+    sehirInput.value = activeCity.textContent || (d.sehir ?? "");
+    sehirKoduInput.value = activeCity.value || (d.sehir_kodu ?? "");
+  }else{
+    sehirInput.value = d.sehir ?? "";
+    sehirKoduInput.value = d.sehir_kodu ?? "";
+  }
 
   const activeDistrict = districtSelect?.selectedOptions?.[0];
-  if(activeDistrict){
+  if(activeDistrict?.value){
     ilceInput.value = activeDistrict.textContent;
     ilceKoduInput.value = activeDistrict.dataset.code || "";
+  }else{
+    ilceInput.value = d.ilce ?? "";
+    ilceKoduInput.value = d.ilce_kodu ?? "";
   }
 
   citySelect?.addEventListener("change", async()=>{
@@ -645,11 +654,22 @@ async function saveEdit(){
   const citySelect = document.getElementById("sehir_select");
   const districtSelect = document.getElementById("ilce_select");
 
-  const sehirName = citySelect?.selectedOptions?.[0]?.textContent || (document.getElementById("sehir")?.value ?? "");
-  const ilceName  = districtSelect?.selectedOptions?.[0]?.textContent || (document.getElementById("ilce")?.value ?? "");
+  const existingSehir = document.getElementById("sehir")?.value ?? "";
+  const existingIlce = document.getElementById("ilce")?.value ?? "";
+  const existingSehirKodu = document.getElementById("sehir_kodu")?.value ?? null;
+  const existingIlceKodu = document.getElementById("ilce_kodu")?.value ?? null;
 
-  const sehirKoduVal = citySelect?.value || document.getElementById("sehir_kodu")?.value || null;
-  const ilceKoduVal  = districtSelect?.selectedOptions?.[0]?.dataset.code || document.getElementById("ilce_kodu")?.value || null;
+  const selectedCity = citySelect?.selectedOptions?.[0];
+  const selectedDistrict = districtSelect?.selectedOptions?.[0];
+
+  const hasCitySelection = Boolean(selectedCity?.value);
+  const hasDistrictSelection = Boolean(selectedDistrict?.value);
+
+  const sehirName = hasCitySelection ? (selectedCity?.textContent || existingSehir) : existingSehir;
+  const ilceName  = hasDistrictSelection ? (selectedDistrict?.textContent || existingIlce) : existingIlce;
+
+  const sehirKoduVal = hasCitySelection ? (selectedCity?.value || existingSehirKodu) : existingSehirKodu;
+  const ilceKoduVal  = hasDistrictSelection ? (selectedDistrict?.dataset.code || existingIlceKodu) : existingIlceKodu;
 
   const updated = {
     ad_soyad: ad_soyad.value, siparis_tel: siparis_tel.value, musteri_tel: musteri_tel.value,
