@@ -311,6 +311,18 @@ input, select{
 }
 .alert-title{ font-size:18px; font-weight:700; margin:0 0 8px; color:#12263a }
 .alert-text{ font-size:14px; color:#333; line-height:1.5 }
+.alert-textarea{
+  width:100%;
+  min-height:110px;
+  margin-top:10px;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #d9e2ec;
+  background:#f8fafc;
+  resize:vertical;
+  font-family:inherit;
+}
+.alert-textarea-error{ border-color:#e74c3c; box-shadow:0 0 0 2px rgba(231,76,60,.2); }
 .alert-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px }
 
 .btn-ghost{
@@ -383,24 +395,40 @@ canvas{ max-width:100% }
   .edit-grid{ grid-template-columns:1fr } /* form tek kolon */
 }
 #actionButtons {
-  display: flex;
-  flex-wrap: wrap;        /* Alt satır oluşturmaya izin ver */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 10px;
   align-items: stretch;
 }
 
 #actionButtons button {
-  flex: 1 1 160px;        /* Üst satırdaki butonlar sabit genişlik */
+  width: 100%;
+}
+
+#actionButtons .btn-danger {
+  justify-self: end;
 }
 
 /* Kapat butonu altta tek satır */
 #actionButtons .btn-close {
-  flex-basis: 100%;
-  order: 99;
+  grid-column: 1 / -1;
   justify-content: center;
 }
 
-/* İptal Et butonu mutlaka üst satırda */
-#actionButtons .btn-danger {
-  order: 1;
+@media(max-width:700px){
+  #actionButtons{ grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+}
+@media(max-width:520px){
+  #actionButtons{ grid-template-columns: 1fr; }
+}
+
+#editButtons{
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+#editButtons .edit-primary-actions{
+  flex-wrap: nowrap;
+  flex: 1;
+  justify-content: flex-start;
 }

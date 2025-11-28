@@ -104,6 +104,45 @@ function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"})
   });
 }
 
+function cancelConfirmModal(){
+  return new Promise(res=>{
+    const root = document.getElementById("alertRoot");
+    const wrap = document.createElement("div");
+    wrap.className = "alert-backdrop";
+    wrap.innerHTML = `
+      <div class="alert-card">
+        <div class="alert-title">Siparişi İptal Et</div>
+        <div class="alert-text">Emin misiniz? Bu sipariş iptal edilecektir.</div>
+        <textarea id="cancelReason" class="alert-textarea" placeholder="İptal nedeni (zorunlu)"></textarea>
+        <div class="alert-actions">
+          <button class="btn-ghost" id="cCancel">Vazgeç</button>
+          <button class="btn-brand" id="cOk">Evet</button>
+        </div>
+      </div>`;
+
+    root.appendChild(wrap);
+
+    const reasonInput = wrap.querySelector("#cancelReason");
+    reasonInput.addEventListener("input", ()=>{
+      reasonInput.classList.remove("alert-textarea-error");
+    });
+
+    const close = () => wrap.remove();
+    wrap.querySelector("#cCancel").onclick = ()=>{ close(); res(null); };
+    wrap.querySelector("#cOk").onclick = ()=>{
+      const val = reasonInput.value.trim();
+      if(!val){
+        toast("İptal nedeni gerekli");
+        reasonInput.focus();
+        reasonInput.classList.add("alert-textarea-error");
+        return;
+      }
+      close();
+      res(val);
+    };
+  });
+}
+
 function logout(){
   localStorage.clear();
   location.href = "login.html";
@@ -401,12 +440,11 @@ function renderDetails() {
   }
 
   // İptal → tüm actionButtons gizli, restoreButtons açık
-  document.getElementById("actionButtons").style.display = iptal ? "none" : "flex";
+  document.getElementById("actionButtons").style.display = iptal ? "none" : "grid";
   document.getElementById("restoreButtons").style.display = iptal ? "flex" : "none";
 
   // edit mode kapanmalı
   document.getElementById("editButtons").style.display = "none";
-  document.getElementById("cancelForm").style.display = "none";
 }
 
 
@@ -615,13 +653,22 @@ async function enterEditMode(){
   const ilceKoduInput = document.getElementById("ilce_kodu");
 
   // ilk açılış değerleri
-  sehirInput.value = citySelect?.selectedOptions?.[0]?.textContent || (d.sehir ?? "");
-  sehirKoduInput.value = citySelect?.value || (d.sehir_kodu ?? "");
+  const activeCity = citySelect?.selectedOptions?.[0];
+  if(activeCity?.value){
+    sehirInput.value = activeCity.textContent || (d.sehir ?? "");
+    sehirKoduInput.value = activeCity.value || (d.sehir_kodu ?? "");
+  }else{
+    sehirInput.value = d.sehir ?? "";
+    sehirKoduInput.value = d.sehir_kodu ?? "";
+  }
 
   const activeDistrict = districtSelect?.selectedOptions?.[0];
-  if(activeDistrict){
+  if(activeDistrict?.value){
     ilceInput.value = activeDistrict.textContent;
     ilceKoduInput.value = activeDistrict.dataset.code || "";
+  }else{
+    ilceInput.value = d.ilce ?? "";
+    ilceKoduInput.value = d.ilce_kodu ?? "";
   }
 
   citySelect?.addEventListener("change", async()=>{
@@ -645,11 +692,22 @@ async function saveEdit(){
   const citySelect = document.getElementById("sehir_select");
   const districtSelect = document.getElementById("ilce_select");
 
-  const sehirName = citySelect?.selectedOptions?.[0]?.textContent || (document.getElementById("sehir")?.value ?? "");
-  const ilceName  = districtSelect?.selectedOptions?.[0]?.textContent || (document.getElementById("ilce")?.value ?? "");
+  const existingSehir = document.getElementById("sehir")?.value ?? "";
+  const existingIlce = document.getElementById("ilce")?.value ?? "";
+  const existingSehirKodu = document.getElementById("sehir_kodu")?.value ?? null;
+  const existingIlceKodu = document.getElementById("ilce_kodu")?.value ?? null;
 
-  const sehirKoduVal = citySelect?.value || document.getElementById("sehir_kodu")?.value || null;
-  const ilceKoduVal  = districtSelect?.selectedOptions?.[0]?.dataset.code || document.getElementById("ilce_kodu")?.value || null;
+  const selectedCity = citySelect?.selectedOptions?.[0];
+  const selectedDistrict = districtSelect?.selectedOptions?.[0];
+
+  const hasCitySelection = Boolean(selectedCity?.value);
+  const hasDistrictSelection = Boolean(selectedDistrict?.value);
+
+  const sehirName = hasCitySelection ? (selectedCity?.textContent || existingSehir) : existingSehir;
+  const ilceName  = hasDistrictSelection ? (selectedDistrict?.textContent || existingIlce) : existingIlce;
+
+  const sehirKoduVal = hasCitySelection ? (selectedCity?.value || existingSehirKodu) : existingSehirKodu;
+  const ilceKoduVal  = hasDistrictSelection ? (selectedDistrict?.dataset.code || existingIlceKodu) : existingIlceKodu;
 
   const updated = {
     ad_soyad: ad_soyad.value, siparis_tel: siparis_tel.value, musteri_tel: musteri_tel.value,
@@ -668,7 +726,7 @@ async function saveEdit(){
 function cancelEdit(){
   renderDetails();
   document.getElementById("editButtons").style.display = "none";
-  document.getElementById("actionButtons").style.display = "flex";
+  document.getElementById("actionButtons").style.display = "grid";
 }
 
 /* ============================================================
@@ -756,33 +814,9 @@ async function printBarcode(){
 /* ============================================================
    İPTAL / GERİ AL
 ============================================================ */
-function openCancelForm(){
-  document.getElementById("cancelForm").style.display = "block";
-  document.getElementById("actionButtons").style.display = "none";
-}
-
-function cancelCancelForm(){
-  document.getElementById("cancelForm").style.display = "none";
-  document.getElementById("actionButtons").style.display = "flex";
-}
-
-async function confirmCancel(){
-
-  /* — QUEEN TARZI UYARI — */
-  const modalOk = await confirmModal({
-    title: "Kargolanmış Siparişi İptal Et",
-    text: `Bu sipariş kargo firmasına gönderilmiş durumda.
-İptal işlemi sonucunda kargo firması tarafından ek ücretler talep edilebilir.
-
-İptal Nedeni (zorunlu)`,
-    confirmText: "İptal Et",
-    cancelText: "Vazgeç"
-  });
-
-  if(!modalOk) return;
-
-  const reason = document.getElementById("iptalInput").value.trim();
-  if(!reason) return toast("İptal nedeni gerekli");
+async function openCancelForm(){
+  const reason = await cancelConfirmModal();
+  if(!reason) return;
 
   await fetch(WH_IPTAL, {
     method:"POST",
