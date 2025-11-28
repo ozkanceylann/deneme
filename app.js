@@ -117,9 +117,18 @@ function renderTable(rows){
 
     const isTrackingTab = ["kargolandi", "tamamlandi", "sorunlu"].includes(currentTab);
 
-const actionBtn = isTrackingTab
-  ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
-  : `<button class="btn-open">Aç</button>`;
+  const isPreparedTab = currentTab === "hazirlandi";
+
+  const actionBtn = isTrackingTab
+    ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
+    : `<button class="btn-open">Aç</button>`;
+
+  const errorPreview = isPreparedTab
+    ? `<button class="error-chip" onclick="event.stopPropagation(); showErrorDetail(${JSON.stringify(o.gonder_hata_bilgisi ?? "")})" title="Detayı görmek için tıkla">
+         <span class="error-chip__label">Hata</span>
+         <span class="error-chip__text">${escapeHtml(shortenError(o.gonder_hata_bilgisi))}</span>
+       </button>`
+    : actionBtn;
 
 
     tr.innerHTML = `
@@ -129,11 +138,11 @@ const actionBtn = isTrackingTab
       <td>${o.toplam_tutar} TL</td>
       <td>${durumText}</td>
       <td>${o.kargo_takip_kodu ?? "-"}</td>
-      <td>${actionBtn}</td>
+      <td>${errorPreview}</td>
     `;
 
     tr.addEventListener("click", (e)=>{
-      if(e.target.classList.contains("btn-open")) return;
+      if(e.target.classList.contains("btn-open") || e.target.closest(".error-chip")) return;
       openOrder(o.siparis_no);
     });
 
@@ -149,12 +158,53 @@ function parseProduct(v){
   return v;
 }
 
+function shortenError(text, max=55){
+  if(!text) return "Hata bilgisi yok";
+  if(text.length <= max) return text;
+  return text.slice(0, max) + "...";
+}
+
+function escapeHtml(str=""){
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 /* ============================================================
    KARGO SORGULAMA
 ============================================================ */
 function openTrackingUrl(url){
   if(!url) return toast("Kargo sorgulama linki yok.");
   window.open(url, "_blank");
+}
+
+/* ============================================================
+   GÖNDERİM HATA DETAYI
+============================================================ */
+function showErrorDetail(message=""){
+  const root = document.getElementById("alertRoot");
+  const wrap = document.createElement("div");
+  wrap.className = "alert-backdrop";
+
+  const safeMessage = message || "Gönderim hatası kaydı bulunamadı.";
+
+  wrap.innerHTML = `
+    <div class="alert-card error-detail-card">
+      <div class="alert-title">Gönderim Hata Bilgisi</div>
+      <div class="alert-text">
+        <textarea class="error-detail-text" readonly>${escapeHtml(safeMessage)}</textarea>
+      </div>
+      <div class="alert-actions">
+        <button class="btn-brand" id="errorClose">Kapat</button>
+      </div>
+    </div>`;
+
+  root.appendChild(wrap);
+
+  wrap.querySelector("#errorClose").onclick = () => wrap.remove();
 }
 
 /* ============================================================
@@ -606,6 +656,7 @@ Object.assign(window, {
   closeModal,
 
   openTrackingUrl,
+  showErrorDetail,
 
   setWaiting,
   markPrepared,

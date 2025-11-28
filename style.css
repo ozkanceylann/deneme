@@ -93,6 +93,33 @@ body{
   padding:8px 12px; background:var(--brand-2);
   border:none; border-radius:6px; color:#fff; cursor:pointer; font-size:13px
 }
+
+.error-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  max-width:240px;
+  background:#fcebea;
+  color:#9b1c1c;
+  border:1px solid #f5c6cb;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.error-chip__label{
+  font-weight:700;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+.error-chip__text{
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 .btn-load-more{
   margin:20px auto; display:block; padding:12px 20px;
   background:var(--brand-2); color:#fff; border:none; border-radius:8px; cursor:pointer
@@ -197,6 +224,18 @@ textarea{
 .alert-card{
   width:min(520px,92vw); background:#fff; border-radius:14px; padding:22px;
   box-shadow:0 10px 30px rgba(0,0,0,.25); animation:pop .18s ease
+}
+.error-detail-card .alert-text{ margin-top:6px; }
+.error-detail-text{
+  width:100%;
+  min-height:160px;
+  border-radius:10px;
+  padding:12px;
+  border:1px solid #d9e2ec;
+  background:#f8fafc;
+  font-family:"SFMono-Regular",Consolas,Monaco,monospace;
+  white-space:pre-wrap;
+  resize:vertical;
 }
 .alert-title{ font-size:18px; font-weight:700; margin:0 0 8px; color:#12263a }
 .alert-text{ font-size:14px; color:#333; line-height:1.5 }
