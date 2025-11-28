@@ -72,6 +72,12 @@ function toast(msg, ms=2500){
   setTimeout(() => t.remove(), ms);
 }
 
+function toggleLoadMore(visible){
+  const btn = document.getElementById("loadMoreBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "block" : "none";
+}
+
 function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"}){
   return new Promise(res=>{
     const root = document.getElementById("alertRoot");
@@ -109,7 +115,7 @@ async function loadOrders(reset=false){
 
   renderTableHeader();
 
-  let q = db.from(TABLE).select("*");
+  let q = db.from(TABLE).select("*", { count: "exact" });
 
   if(currentTab==="bekleyen")   q = q.eq("kargo_durumu","Bekliyor");
   if(currentTab==="hazirlandi") q = q.eq("kargo_durumu","Hazırlandı");
@@ -118,24 +124,40 @@ async function loadOrders(reset=false){
   if(currentTab==="sorunlu")    q = q.eq("kargo_durumu","Sorunlu");
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
 
-  q = q.order("siparis_no", { ascending:false })
-       .range(0, currentPage*PAGE_SIZE - 1);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = currentPage * PAGE_SIZE - 1;
 
-  const { data, error } = await q;
+  q = q.order("siparis_no", { ascending:false })
+       .range(start, end);
+
+  const { data, error, count } = await q;
   if(error){
     tbody.innerHTML = `<tr><td colspan="${getColumnCount()}">HATA: ${error.message}</td></tr>`;
+    toggleLoadMore(false);
     return;
   }
 
-  renderTable(data);
+  const hasMore = typeof count === "number"
+    ? count > currentPage * PAGE_SIZE
+    : (data?.length === PAGE_SIZE);
+
+  if(!reset && (!data || data.length === 0)){
+    toggleLoadMore(false);
+    return toast("Gösterilecek başka kayıt yok.");
+  }
+
+  renderTable(data, { append: !reset, hasMore });
 }
 
-function renderTable(rows){
+function renderTable(rows, { append=false, hasMore } = {}){
   const tbody = document.getElementById("ordersBody");
-  tbody.innerHTML = "";
+  if(!tbody) return;
+
+  if(!append) tbody.innerHTML = "";
 
   if(!rows || rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="${getColumnCount()}">Kayıt bulunamadı</td></tr>`;
+    if(!append) tbody.innerHTML = `<tr><td colspan="${getColumnCount()}">Kayıt bulunamadı</td></tr>`;
+    toggleLoadMore(false);
     return;
   }
 
@@ -190,6 +212,8 @@ function renderTable(rows){
 
     tbody.appendChild(tr);
   });
+
+  if(typeof hasMore === "boolean") toggleLoadMore(hasMore);
 }
 
 function parseProduct(v){
@@ -614,7 +638,7 @@ async function searchOrders(){
     adres.ilike.%${q}%,
     kargo_takip_kodu.ilike.%${q}%
   `);
-  renderTable(data);
+  renderTable(data, { append:false, hasMore:false });
 }
 
 function clearSearch(){
@@ -732,5 +756,3 @@ Object.assign(window, {
 /* ============================================================
    BAŞLAT
 ============================================================ */
-loadOrders(true);
-
